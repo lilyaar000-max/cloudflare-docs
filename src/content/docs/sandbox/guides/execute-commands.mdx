@@ -97,6 +97,38 @@ try {
 ```
 </TypeScriptExample>
 
+## Set environment variables and working directory
+
+Use the `env` and `cwd` options to customize command execution without affecting the session:
+
+<TypeScriptExample>
+```
+// Set environment variables for a single command
+const result = await sandbox.exec('npm test', {
+  env: {
+    NODE_ENV: 'test',
+    CI: 'true',
+    DATABASE_URL: 'postgres://localhost/test_db'
+  }
+});
+
+// Change working directory for a single command
+const build = await sandbox.exec('npm run build', {
+  cwd: '/workspace/my-app'
+});
+
+// Combine both options
+const test = await sandbox.exec('pytest', {
+  env: { PYTHONPATH: '/workspace/lib' },
+  cwd: '/workspace/tests'
+});
+```
+</TypeScriptExample>
+
+:::note
+Per-command environment variables are **merged** with session environment variables. Per-command working directory **overrides** the session working directory. These changes only affect the current command and do not persist to the session.
+:::
+
 ## Execute shell commands
 
 The sandbox supports shell features like pipes, redirects, and chaining:
@@ -158,14 +190,19 @@ if (!check.success) {
 
 ### Working directory issues
 
-Use absolute paths or change directory:
+Use the `cwd` option for cleaner command execution:
 
 <TypeScriptExample>
 ```
-// Use absolute path
+// Best - use cwd option
+await sandbox.exec('python script.py', {
+  cwd: '/workspace/my-app'
+});
+
+// Alternative - use absolute path
 await sandbox.exec('python /workspace/my-app/script.py');
 
-// Or change directory
+// Also works - change directory in command
 await sandbox.exec('cd /workspace/my-app && python script.py');
 ```
 </TypeScriptExample>

@@ -25,6 +25,8 @@ const result = await sandbox.exec(command: string, options?: ExecOptions): Promi
   - `stream` - Enable streaming callbacks (default: `false`)
   - `onOutput` - Callback for real-time output: `(stream: 'stdout' | 'stderr', data: string) => void`
   - `timeout` - Maximum execution time in milliseconds
+  - `env` - Environment variables for this command (merged with session defaults)
+  - `cwd` - Working directory for this command (overrides session default)
 
 **Returns**: `Promise<ExecuteResponse>` with `success`, `stdout`, `stderr`, `exitCode`
 
@@ -37,6 +39,12 @@ if (result.success) {
 } else {
   console.error('Build failed:', result.stderr);
 }
+
+// With custom environment and working directory
+await sandbox.exec('npm test', {
+  cwd: '/workspace/my-app',
+  env: { NODE_ENV: 'test', CI: 'true' }
+});
 
 // With streaming
 await sandbox.exec('npm install', {
@@ -56,7 +64,7 @@ const stream = await sandbox.execStream(command: string, options?: ExecOptions):
 
 **Parameters**:
 - `command` - The command to execute
-- `options` - Same as `exec()`
+- `options` (optional) - Same as `exec()` (includes `timeout`, `env`, `cwd`)
 
 **Returns**: `Promise<ReadableStream>` emitting `ExecEvent` objects (`start`, `stdout`, `stderr`, `complete`, `error`)
 
@@ -79,6 +87,12 @@ for await (const event of parseSSEStream<ExecEvent>(stream)) {
       break;
   }
 }
+
+// With custom environment
+const testStream = await sandbox.execStream('npm run test', {
+  env: { NODE_ENV: 'test' },
+  cwd: '/workspace/tests'
+});
 ```
 </TypeScriptExample>
 
@@ -93,8 +107,11 @@ const process = await sandbox.startProcess(command: string, options?: ProcessOpt
 **Parameters**:
 - `command` - The command to start as a background process
 - `options` (optional):
-  - `cwd` - Working directory
-  - `env` - Environment variables
+  - `cwd` - Working directory (overrides session default)
+  - `env` - Environment variables (merged with session defaults)
+  - `timeout` - Maximum execution time in milliseconds
+  - `processId` - Custom process ID for later reference
+  - `autoCleanup` - Automatically cleanup process record after exit (default: `true`)
 
 **Returns**: `Promise<ProcessInfo>` with `id`, `pid`, `command`, `status`
 
@@ -103,10 +120,16 @@ const process = await sandbox.startProcess(command: string, options?: ProcessOpt
 const server = await sandbox.startProcess('python -m http.server 8000');
 console.log('Started with PID:', server.pid);
 
-// With custom environment
+// With custom environment and working directory
 const app = await sandbox.startProcess('node app.js', {
   cwd: '/workspace/my-app',
   env: { NODE_ENV: 'production', PORT: '3000' }
+});
+
+// With custom process ID for easy reference
+const db = await sandbox.startProcess('redis-server', {
+  processId: 'redis',
+  env: { REDIS_PORT: '6379' }
 });
 ```
 </TypeScriptExample>

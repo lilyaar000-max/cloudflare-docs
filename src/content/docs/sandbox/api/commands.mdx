@@ -88,7 +88,7 @@ for await (const event of parseSSEStream<ExecEvent>(stream)) {
   }
 }
 
-// With custom environment
+// With custom environment and working directory
 const testStream = await sandbox.execStream('npm run test', {
   env: { NODE_ENV: 'test' },
   cwd: '/workspace/tests'
